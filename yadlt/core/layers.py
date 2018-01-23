@@ -104,3 +104,36 @@ class Evaluation(object):
             if summary:
                 tf.summary.scalar('accuracy', accuracy)
             return accuracy
+
+    @staticmethod
+    def precision(mod_y, ref_y, summary=True, name="precision"):
+    	with tf.name_scope(name):
+    		predictions = tf.argmax(mod_y, 1)
+    		actuals = tf.argmax(ref_y, 1)
+    		
+    		ones_likes = tf.ones_like(actuals)
+    		zeros_likes = tf.zeros_like(actuals)
+
+    		tp = tf.reduce_sum(tf.cast(tf.logical_and(tf.equal(actuals, zeros_likes), tf.equal(predictions, zeros_likes)), tf.float32))
+    		fp = tf.reduce_sum(tf.cast(tf.logical_and(tf.equal(actuals, ones_likes), tf.equal(predictions, zeros_likes)), tf.float32))
+    		precision = tf.div(tp, tf.add(tp, fp))
+    		if summary:
+    			tf.summary.scalar('precision', precision)
+    		return precision
+
+
+    @staticmethod
+    def recall(mod_y, ref_y, summary=True, name="recall"):
+        with tf.name_scope(name):
+                predictions = tf.argmax(mod_y, 1)
+                actuals = tf.argmax(ref_y, 1)
+
+                ones_likes = tf.ones_like(actuals)
+                zeros_likes = tf.zeros_like(actuals)
+
+                tp = tf.reduce_sum(tf.cast(tf.logical_and(tf.equal(actuals, zeros_likes), tf.equal(predictions, zeros_likes)), tf.float32))
+                fn = tf.reduce_sum(tf.cast(tf.logical_and(tf.equal(actuals, zeros_likes), tf.equal(predictions, ones_likes)), tf.float32))
+                recall = tf.div(tp, tf.add(tp, fn))
+                if summary:
+                        tf.summary.scalar('recall', recall)
+                return recall
