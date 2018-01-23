@@ -96,15 +96,16 @@ class RBM(UnsupervisedModel):
             else:
                 clean_set.append(train_set[i])
 
-        np.random.shuffle(clean_set)
-        np.random.shuffle(buggy_set)
 
-        clean_batches = [_ for _ in utilities.gen_clean_batches(clean_set, self.batch_size)]
-        buggy_batches = [_ for _ in utilities.gen_buggy_batches(buggy_set, self.batch_size)]
-        batches = clean_batches + buggy_batches
-        updates = [self.w_upd8, self.bh_upd8, self.bv_upd8]
+        for i in range(0, len(clean_set), self.batch_size//2):
+            np.random.shuffle(clean_set)
+            np.random.shuffle(buggy_set)
+            clean_batch = clean_set[:self.batch_size//2]
+            buggy_batch = buggy_set[:self.batch_size//2]
+            batch = clean_batch + buggy_batch
+            batch = np.array(batch)
+            updates = [self.w_upd8, self.bh_upd8, self.bv_upd8]
 
-        for batch in batches:
             self.tf_session.run(updates,
                                 feed_dict=self._create_feed_dict(batch))
 
