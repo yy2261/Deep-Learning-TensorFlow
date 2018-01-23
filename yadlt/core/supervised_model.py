@@ -71,7 +71,7 @@ class SupervisedModel(Model):
                 # Save model
                 self.tf_saver.save(self.tf_session, self.model_path)
 
-    def predict(self, test_X):
+    def predict(self, test_X, isDBN):
         """Predict the labels for the test set.
 
         Parameters
@@ -92,6 +92,8 @@ class SupervisedModel(Model):
                     self.input_data: test_X,
                     self.keep_prob: 1
                 }
+                if isDBN == True:
+                    return self.next_train.eval(feed), self.mod_y.eval(feed)
                 return self.mod_y.eval(feed)
 
     def score(self, test_X, test_Y):
@@ -119,4 +121,4 @@ class SupervisedModel(Model):
                     self.input_labels: test_Y,
                     self.keep_prob: 1
                 }
-                return self.accuracy.eval(feed)
+                return self.accuracy.eval(feed), self.precision.eval(feed), self.recall.eval(feed)

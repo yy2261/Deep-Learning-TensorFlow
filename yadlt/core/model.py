@@ -36,7 +36,7 @@ class Model(object):
         self.tf_summary_writer = None
 
     def pretrain_procedure(self, layer_objs, layer_graphs, set_params_func,
-                           train_set, validation_set=None):
+                           train_set, train_label, validation_set=None, validation_label=None):
         """Perform unsupervised pretraining of the model.
 
         :param layer_objs: list of model objects (autoencoders or rbms)
@@ -53,13 +53,13 @@ class Model(object):
         for l, layer_obj in enumerate(layer_objs):
             print('Training layer {}...'.format(l + 1))
             next_train, next_valid = self._pretrain_layer_and_gen_feed(
-                layer_obj, set_params_func, next_train, next_valid,
+                layer_obj, set_params_func, next_train, train_label, next_valid, validation_label,
                 layer_graphs[l])
 
         return next_train, next_valid
 
     def _pretrain_layer_and_gen_feed(self, layer_obj, set_params_func,
-                                     train_set, validation_set, graph):
+                                     train_set, train_label, validation_set, validation_label, graph):
         """Pretrain a single autoencoder and encode the data for the next layer.
 
         :param layer_obj: layer model
@@ -70,8 +70,8 @@ class Model(object):
         :param graph: tf object for the rbm
         :return: encoded train data, encoded validation data
         """
-        layer_obj.fit(train_set, train_set,
-                      validation_set, validation_set, graph=graph)
+        layer_obj.fit(train_set, train_label,
+                      validation_set, validation_label, graph=graph)
 
         with graph.as_default():
             set_params_func(layer_obj, graph)
