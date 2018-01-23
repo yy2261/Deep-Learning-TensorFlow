@@ -86,17 +86,29 @@ def seq_data_iterator(raw_data, batch_size, num_steps):
 # ################ #
 
 
-def gen_batches(data, batch_size):
+def gen_clean_batches(clean_data, batch_size):
     """Divide input data into batches.
 
     :param data: input data
     :param batch_size: size of each batch
     :return: data divided into batches
     """
-    data = np.array(data)
+    half_size = int(batch_size/2)
+    clean_data = np.array(clean_data)
+    for i in range(0, clean_data.shape[0], half_size):
+        yield clean_data[i:i + half_size]
 
-    for i in range(0, data.shape[0], batch_size):
-        yield data[i:i + batch_size]
+def gen_buggy_batches(buggy_data, batch_size):
+    """Divide input data into batches.
+
+    :param data: input data
+    :param batch_size: size of each batch
+    :return: data divided into batches
+    """
+    half_size = int(batch_size/2)
+    buggy_data = np.array(buggy_data)
+    for i in range(0, buggy_data.shape[0], half_size):
+        yield buggy_data[i:i + half_size]    
 
 
 def to_one_hot(dataY):
