@@ -110,7 +110,7 @@ class DeepBeliefNetwork(SupervisedModel):
 
             self.rbm_graphs.append(tf.Graph())
 
-    def pretrain(self, train_set, validation_set=None):
+    def pretrain(self, train_set, train_label, validation_set=None, validation_label=None):
         """Perform Unsupervised pretraining of the DBN."""
         self.do_pretrain = True
 
@@ -121,7 +121,7 @@ class DeepBeliefNetwork(SupervisedModel):
 
         return SupervisedModel.pretrain_procedure(
             self, self.rbms, self.rbm_graphs, set_params_func=set_params_func,
-            train_set=train_set, validation_set=validation_set)
+            train_set=train_set, train_label=train_label, validation_set=validation_set, validation_label=validation_label)
 
     def _train_model(self, train_set, train_labels,
                      validation_set, validation_labels):
@@ -139,8 +139,8 @@ class DeepBeliefNetwork(SupervisedModel):
         for i in pbar:
 
             np.random.shuffle(shuff)
-            batches = [_ for _ in utilities.gen_batches(
-                shuff, self.batch_size)]
+            batches = [_ for _ in utilities.gen_clean_batches(
+                shuff, self.batch_size*2)]
 
             for batch in batches:
                 x_batch, y_batch = zip(*batch)
@@ -171,13 +171,15 @@ class DeepBeliefNetwork(SupervisedModel):
         self._create_placeholders(n_features, n_classes)
         self._create_variables(n_features)
 
-        next_train = self._create_encoding_layers()
-        self.mod_y, _, _ = Layers.linear(next_train, n_classes)
+        self.next_train = self._create_encoding_layers()
+        self.mod_y, _, _ = Layers.linear(self.next_train, n_classes)
         self.layer_nodes.append(self.mod_y)
 
         self.cost = self.loss.compile(self.mod_y, self.input_labels)
         self.train_step = self.trainer.compile(self.cost)
         self.accuracy = Evaluation.accuracy(self.mod_y, self.input_labels)
+        self.precision = Evaluation.precision(self.mod_y, self.input_labels)
+        self.recall = Evaluation.recall(self.mod_y, self.input_labels)
 
     def _create_placeholders(self, n_features, n_classes):
         """Create the TensorFlow placeholders for the model.

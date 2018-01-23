@@ -71,7 +71,7 @@ class RBM(UnsupervisedModel):
         """
         pbar = tqdm(range(self.num_epochs))
         for i in pbar:
-            self._run_train_step(train_set)
+            self._run_train_step(train_set, train_ref)
 
             if validation_set is not None:
                 feed = self._create_feed_dict(validation_set)
@@ -80,7 +80,7 @@ class RBM(UnsupervisedModel):
                     self.tf_summary_writer, i, feed, self.cost)
                 pbar.set_description("Reconstruction loss: %s" % (err))
 
-    def _run_train_step(self, train_set):
+    def _run_train_step(self, train_set, train_ref):
         """Run a training step.
 
         A training step is made by randomly shuffling the training set,
@@ -88,10 +88,20 @@ class RBM(UnsupervisedModel):
         :param train_set: training set
         :return: self
         """
-        np.random.shuffle(train_set)
+        clean_set = []
+        buggy_set = []
+        for i in range(len(train_ref)):
+            if train_ref[i][0] == 1:
+                buggy_set.append(train_set[i])
+            else:
+                clean_set.append(train_set[i])
 
-        batches = [_ for _ in utilities.gen_batches(train_set,
-                                                    self.batch_size)]
+        np.random.shuffle(clean_set)
+        np.random.shuffle(buggy_set)
+
+        clean_batches = [_ for _ in utilities.gen_clean_batches(clean_set, self.batch_size)]
+        buggy_batches = [_ for _ in utilities.gen_buggy_batches(buggy_set, self.batch_size)]
+        batches = clean_batches + buggy_batches
         updates = [self.w_upd8, self.bh_upd8, self.bv_upd8]
 
         for batch in batches:
