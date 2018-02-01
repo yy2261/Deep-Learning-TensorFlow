@@ -6,7 +6,7 @@ import tensorflow as tf
 class Trainer(object):
     """Wrapper of Tensorflow Optimizers."""
 
-    def __init__(self, optimizer, **kw):
+    def __init__(self, optimizer, global_step, **kw):
         """Constructor.
 
         Parameters
@@ -33,6 +33,7 @@ class Trainer(object):
                 return kw[k]
 
         if optimizer == "sgd":
+	    lr = tf.train.exponential_decay(d("learning_rate"), global_step, 200, 0.1, True)
             self.opt_ = tf.train.GradientDescentOptimizer(d("learning_rate"))
 
         elif optimizer == "adagrad":
