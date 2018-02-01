@@ -27,7 +27,7 @@ class DeepBeliefNetwork(SupervisedModel):
         finetune_loss_func='softmax_cross_entropy',
         finetune_act_func=tf.nn.sigmoid, finetune_opt='sgd',
         finetune_learning_rate=0.001, finetune_num_epochs=10,
-            finetune_batch_size=20, momentum=0.5):
+            finetune_batch_size=20, momentum=0.5, global_step=1000):
         """Constructor.
 
         :param rbm_layers: list containing the hidden units for each layer
@@ -54,10 +54,11 @@ class DeepBeliefNetwork(SupervisedModel):
         self.batch_size = finetune_batch_size
         self.momentum = momentum
         self.dropout = finetune_dropout
+	self.global_step = global_step
 
         self.loss = Loss(self.loss_func)
         self.trainer = Trainer(
-            finetune_opt, learning_rate=finetune_learning_rate,
+            finetune_opt, global_step=self.global_step, learning_rate=finetune_learning_rate,
             momentum=momentum)
 
         self.do_pretrain = do_pretrain
