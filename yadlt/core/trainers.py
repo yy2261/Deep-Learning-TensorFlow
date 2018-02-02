@@ -6,7 +6,7 @@ import tensorflow as tf
 class Trainer(object):
     """Wrapper of Tensorflow Optimizers."""
 
-    def __init__(self, optimizer, global_step, **kw):
+    def __init__(self, optimizer, decay_step, decay_rate, global_step, **kw):
         """Constructor.
 
         Parameters
@@ -33,8 +33,8 @@ class Trainer(object):
                 return kw[k]
 
         if optimizer == "sgd":
-	    lr = tf.train.exponential_decay(d("learning_rate"), global_step, 200, 0.1, True)
-            self.opt_ = tf.train.GradientDescentOptimizer(d("learning_rate"))
+	    self.lr = tf.train.exponential_decay(d("learning_rate"), global_step, decay_step, decay_rate, True)
+            self.opt_ = tf.train.GradientDescentOptimizer(self.lr)
 
         elif optimizer == "adagrad":
             self.opt_ = tf.train.AdagradOptimizer(
@@ -51,7 +51,7 @@ class Trainer(object):
                 d("learning_rate"), d("momentum"),
                 use_nesterov=d("use_nesterov", False))
 
-    def compile(self, cost, name_scope="train"):
+    def compile(self, cost, global_step, name_scope='train'):
         """Compile the optimizer with the given training parameters.
 
         Parameters
@@ -62,7 +62,7 @@ class Trainer(object):
             Optional name scope for the optimizer graph ops.
         """
         with tf.name_scope(name_scope):
-            return self.opt_.minimize(cost)
+       	    return self.opt_.minimize(cost, global_step=global_step)
 
 
 class Loss(object):
