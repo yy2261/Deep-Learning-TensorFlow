@@ -27,7 +27,7 @@ class DeepBeliefNetwork(SupervisedModel):
         finetune_loss_func='softmax_cross_entropy',
         finetune_act_func=tf.nn.sigmoid, finetune_opt='sgd',
         finetune_learning_rate=0.001, finetune_num_epochs=10,
-            finetune_batch_size=20, momentum=0.5, global_step=1000):
+            finetune_batch_size=20, momentum=0.5, decay_step=400, decay_rate=0.1):
         """Constructor.
 
         :param rbm_layers: list containing the hidden units for each layer
@@ -54,16 +54,13 @@ class DeepBeliefNetwork(SupervisedModel):
         self.batch_size = finetune_batch_size
         self.momentum = momentum
         self.dropout = finetune_dropout
-	self.global_step = global_step
-
         self.loss = Loss(self.loss_func)
-        self.trainer = Trainer(
-            finetune_opt, global_step=self.global_step, learning_rate=finetune_learning_rate,
-            momentum=momentum)
 
         self.do_pretrain = do_pretrain
         self.layers = rbm_layers
         self.finetune_act_func = finetune_act_func
+	self.decay_step = decay_step
+	self.decay_rate = decay_rate
 
         # Model parameters
         self.encoding_w_ = []  # list of matrices of encoding weights per layer
@@ -145,11 +142,12 @@ class DeepBeliefNetwork(SupervisedModel):
 
             for batch in batches:
                 x_batch, y_batch = zip(*batch)
-                self.tf_session.run(
-                    self.train_step, feed_dict={
+                _, lr = self.tf_session.run(
+                    [self.train_step, self.trainer.lr], feed_dict={
                         self.input_data: x_batch,
                         self.input_labels: y_batch,
                         self.keep_prob: self.dropout})
+#		print(lr)
 
             if validation_set is not None:
                 feed = {self.input_data: validation_set,
@@ -171,13 +169,15 @@ class DeepBeliefNetwork(SupervisedModel):
         """
         self._create_placeholders(n_features, n_classes)
         self._create_variables(n_features)
-
+        self.global_step = tf.Variable(0, dtype=tf.int32)
+        self.trainer = Trainer(
+            self.opt, global_step=self.global_step, decay_step=self.decay_step, decay_rate=self.decay_rate, learning_rate=self.learning_rate,
+            momentum=self.momentum)
         self.next_train = self._create_encoding_layers()
         self.mod_y, _, _ = Layers.linear(self.next_train, n_classes)
         self.layer_nodes.append(self.mod_y)
-
         self.cost = self.loss.compile(self.mod_y, self.input_labels)
-        self.train_step = self.trainer.compile(self.cost)
+        self.train_step = self.trainer.compile(self.cost, self.global_step)
         self.accuracy = Evaluation.accuracy(self.mod_y, self.input_labels)
         self.precision = Evaluation.precision(self.mod_y, self.input_labels)
         self.recall = Evaluation.recall(self.mod_y, self.input_labels)
