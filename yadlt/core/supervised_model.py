@@ -86,8 +86,13 @@ class SupervisedModel(Model):
         array_like, shape (n_samples,) : predicted labels.
         """
         with self.tf_graph.as_default():
+	    self.tf_saver = tf.train.import_meta_graph(self.model_path+'.meta')
             with tf.Session() as self.tf_session:
                 self.tf_saver.restore(self.tf_session, self.model_path)
+		self.input_data = tf.get_default_graph().get_tensor_by_name('x-input:0')
+		self.keep_prob = tf.get_default_graph().get_tensor_by_name('keep-probs:0')
+		self.next_train = tf.get_default_graph().get_tensor_by_name('encode-9/dropout/mul:0')
+		self.mod_y = tf.get_default_graph().get_tensor_by_name('linear/output-y:0')
                 feed = {
                     self.input_data: test_X,
                     self.keep_prob: 1
